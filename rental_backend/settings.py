@@ -82,10 +82,15 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
+        'payments': {  # Add this logger for the payments app
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     },
     'root': {  # Root logger
         'handlers': ['console'],
-        'level': 'DEBUG',
+        'level': 'INFO',  # Changed from DEBUG
     },
 }
 
@@ -99,6 +104,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'agents',
     'property_manager',
+    'django_filters',
     
     # Third-party apps
     'rest_framework',
@@ -112,6 +118,8 @@ INSTALLED_APPS = [
     'units',
     'payments',
     'communications',
+    'lease',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -197,13 +205,16 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'accounts.authentication.FirebaseDRFAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'rental_backend.permissions.IsLandlord',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
+       
     ],
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -213,21 +224,25 @@ REST_FRAMEWORK = {
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
 
-# Django REST Framework Configuration
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'accounts.authentication.FirebaseDRFAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rental_backend.permissions.IsLandlord',
-    ],
-}
-
-
-
-# CORS Configuration (for development)
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = False  # Change this to False since we're specifying origins
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "https://properties.infiniasync.com"
+]
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Settings
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "https://properties.infiniasync.com"
+]
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF token
+CSRF_USE_SESSIONS = False  # Store CSRF token in cookie instead of session
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
@@ -238,3 +253,96 @@ AUTHENTICATION_BACKENDS = [
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CORS_EXPOSE_HEADERS = ['Content-Type', 'Authorization']
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+# Modify these Celery settings
+CELERY_TASK_STORE_EAGER_RESULT = False  # Change to False
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_WORKER_ENABLE_REMOTE_CONTROL = True  # Enable remote control
+CELERY_TASK_ANNOTATIONS = None
+
+# Modify the root logger level
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+            'level': 'DEBUG',  # Show all messages
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'rental_backend': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'accounts': {  # Add this logger for the accounts app
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+    'root': {  # Root logger
+        'handlers': ['console'],
+        'level': 'WARNING',  # Change from INFO to WARNING to reduce noise
+    },
+}
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Add this line
+CELERY_TASK_EAGER_PROPAGATES = True  # Ensure exceptions are propagated in eager mode
+
+
+# Celery Beat Schedule Configuration
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'generate-monthly-invoices': {
+        'task': 'payments.tasks.generate_monthly_invoices',
+        'schedule': crontab(day_of_month='1', hour='0', minute='0'),  # Run at midnight on the 1st of every month
+    },
+}
+
+# AfricasTalking Configuration
+SMS_RATE_LIMIT_PER_HOUR = 100  # Adjust as needed
+AFRICASTALKING_SENDER_ID = 'INFINIASYNC'
+AFRICASTALKING_USERNAME = 'infinia-sms'
+AFRICASTALKING_API_KEY = 'atsk_1fbf89b1459380329c3260a4083d1d1254a6f17c4835686a3e3bb080927a270940a9c115'

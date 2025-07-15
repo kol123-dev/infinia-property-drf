@@ -48,7 +48,20 @@ class FirebaseAuthenticationBackend(BaseBackend):
                     logger.error("Firebase user has no email")
                     return None
                     
+                # In the authenticate method, replace:
                 name = firebase_user.display_name or email.split('@')[0]
+                
+                # With:
+                full_name = firebase_user.display_name or email.split('@')[0]
+                first_name = full_name.split()[0] if full_name else ""
+                last_name = " ".join(full_name.split()[1:]) if full_name and len(full_name.split()) > 1 else ""
+                
+                # And in the User.objects.create call, replace:
+                name=name,
+                
+                # With:
+                first_name=first_name,
+                last_name=last_name,
                 
                 # Get custom claims if they exist
                 custom_claims = firebase_user.custom_claims or {}

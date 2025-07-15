@@ -1,26 +1,25 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 from landlords.models import Landlord
-from units.models import Unit
 from accounts.models import User
 
+class TenantStatus(models.TextChoices):
+    ACTIVE = 'ACTIVE', 'Active'
+    PAST = 'PAST', 'Past'
+    EVICTED = 'EVICTED', 'Evicted'
+    APPLICANT = 'APPLICANT', 'Applicant'
+
+class EmergencyContact(models.Model):
+    """Represents an emergency contact for a tenant."""
+    tenant = models.OneToOneField('Tenant', on_delete=models.CASCADE, related_name='emergency_contact')
+    name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=20)
+    relationship = models.CharField(max_length=50)
 
 class Tenant(models.Model):
-    """
-    Represents a rental tenant.
-    Can be assigned to a unit.
-    """
-    STATUS_CHOICES = (
-        ('active', 'Active'),
-        ('vacated', 'Vacated'),
-        ('deposit_defaulter', 'Deposit Defaulter'),
-        ('in_arrears', 'In Arrears'),
-    )
-
-    landlord = models.ForeignKey(
-        Landlord,
-        on_delete=models.CASCADE,
-        related_name='tenants'
-    )
+    """Represents a rental tenant with detailed tracking."""
+    tenant_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    landlord = models.ForeignKey(Landlord, on_delete=models.CASCADE, related_name='tenants', null=True, blank=True)
     user = models.OneToOneField(
         User,
         on_delete=models.SET_NULL,
@@ -28,25 +27,59 @@ class Tenant(models.Model):
         blank=True,
         limit_choices_to={'role': 'tenant'}
     )
-    unit = models.ForeignKey(
-        Unit,
+    
+    # Basic Info
+    phone = models.CharField(max_length=20, help_text='Formatted: "+1234567890"', null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True, help_text='For lease compliance')
+    
+    # Lease/Living Details
+    current_unit = models.OneToOneField(
+        'units.Unit',  # Use string reference instead
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
-        related_name='occupants'
+        related_name='tenant_unit'  # Change related_name to avoid conflict
     )
-    move_in_date = models.DateField(null=True)
-    expected_move_out_date = models.DateField(null=True, blank=True)
-    actual_move_out_date = models.DateField(null=True, blank=True)
-    arrears = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    active_lease = models.OneToOneField(
+        'lease.Lease',  # Use string reference instead of direct import
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='current_tenant'
+    )
+    move_in_date = models.DateField(null=True, blank=True)
+    move_out_date = models.DateField(null=True, blank=True)
+    rent_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        null=True,
+        blank=True
+    )
+    payment_due_day = models.IntegerField(null=True, blank=True)
+    
+    # Financials
+    balance_due = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    
+    # Documents
+    lease_agreement_url = models.URLField(null=True, blank=True)
+    id_verification_url = models.URLField(null=True, blank=True)
+    proof_of_income_url = models.URLField(null=True, blank=True)
+    
+    # Status and Metadata
+    status = models.CharField(
+        max_length=20,
+        choices=TenantStatus.choices,
+        default=TenantStatus.APPLICANT
+    )
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.name if self.user and hasattr(self.user, 'name') else self.user.email} - {self.landlord.business_name}"
-
+        return f"{self.user.full_name if self.user else self.tenant_id} - {self.current_unit}"
 
 class Contract(models.Model):
     """

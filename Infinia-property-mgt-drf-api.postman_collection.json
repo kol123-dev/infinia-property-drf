@@ -1,0 +1,593 @@
+{
+    "info": {
+        "name": "Rental Management API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Firebase Login",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/accounts/firebase-login/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "id_token": "your_firebase_id_token"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Create User",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/accounts/create-user/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "email": "user@example.com",
+                                "password": "password123",
+                                "name": "John Doe",
+                                "role": "tenant"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Debug Auth",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/accounts/debug-auth/"
+                    }
+                },
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/accounts/users/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Landlords",
+            "item": [
+                {
+                    "name": "List Landlords",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/landlords/"
+                    }
+                },
+                {
+                    "name": "Create Landlord",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/landlords/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "business_name": "Example Properties",
+                                "address": "123 Main St",
+                                "company_registration_number": "REG123"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Create Full Landlord",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/landlords/create_full/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "email": "landlord@example.com",
+                                "password": "password123",
+                                "name": "John Landlord",
+                                "business_name": "Example Properties",
+                                "address": "123 Main St",
+                                "company_registration_number": "REG123"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Landlord",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/landlords/{{landlord_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Landlord",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/landlords/{{landlord_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "business_name": "Updated Properties",
+                                "address": "456 New St",
+                                "company_registration_number": "REG456"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Landlord",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/landlords/{{landlord_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Property Managers",
+            "item": [
+                {
+                    "name": "List Property Managers",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/property-managers/"
+                    }
+                },
+                {
+                    "name": "Create Property Manager",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/property-managers/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "name": "John Manager",
+                                "phone": "+1234567890"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Create Full Property Manager",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/property-managers/create_full/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "email": "manager@example.com",
+                                "password": "password123",
+                                "name": "John Manager",
+                                "phone": "+1234567890"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Property Manager",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/property-managers/{{manager_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Property Manager",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/property-managers/{{manager_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "name": "Updated Manager",
+                                "phone": "+9876543210"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Property Manager",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/property-managers/{{manager_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Properties",
+            "item": [
+                {
+                    "name": "List Properties",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/properties/"
+                    }
+                },
+                {
+                    "name": "Create Property",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/properties/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "name": "Luxury Apartments",
+                                "address": "789 Luxury Lane",
+                                "landlord": "{{landlord_id}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Property",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/properties/{{property_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Property",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/properties/{{property_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "name": "Updated Apartments",
+                                "address": "321 New Lane"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Property",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/properties/{{property_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Units",
+            "item": [
+                {
+                    "name": "List Units",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/units/"
+                    }
+                },
+                {
+                    "name": "Create Unit",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/units/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "unit_number": "A101",
+                                "property": "{{property_id}}",
+                                "rent_amount": 1500
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Unit",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/units/{{unit_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Unit",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/units/{{unit_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "unit_number": "B202",
+                                "rent_amount": 1600
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Unit",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/units/{{unit_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Tenants",
+            "item": [
+                {
+                    "name": "List Tenants",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/tenants/"
+                    }
+                },
+                {
+                    "name": "Create Tenant",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/tenants/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "user": "{{user_id}}",
+                                "landlord": "{{landlord_id}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Create Full Tenant",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/tenants/create_full/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "email": "tenant@example.com",
+                                "password": "password123",
+                                "name": "John Tenant",
+                                "landlord": "{{landlord_id}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Tenant",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/tenants/{{tenant_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Tenant",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/tenants/{{tenant_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "user": "{{user_id}}",
+                                "landlord": "{{landlord_id}}"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Tenant",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/tenants/{{tenant_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Contracts",
+            "item": [
+                {
+                    "name": "List Contracts",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/contracts/"
+                    }
+                },
+                {
+                    "name": "Create Contract",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/contracts/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "tenant": "{{tenant_id}}",
+                                "start_date": "2024-01-01",
+                                "end_date": "2024-12-31",
+                                "rent_amount": 1500
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Contract",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/contracts/{{contract_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Contract",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/contracts/{{contract_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "end_date": "2025-12-31",
+                                "rent_amount": 1600
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Contract",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/contracts/{{contract_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Payments",
+            "item": [
+                {
+                    "name": "List Payments",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/payments/"
+                    }
+                },
+                {
+                    "name": "Create Payment",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/payments/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "contract": "{{contract_id}}",
+                                "amount": 1500,
+                                "payment_date": "2024-01-01",
+                                "payment_method": "bank_transfer"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Payment",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/payments/{{payment_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Payment",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/payments/{{payment_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "amount": 1600,
+                                "payment_method": "credit_card"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Payment",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/payments/{{payment_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Payment Receipts",
+            "item": [
+                {
+                    "name": "List Payment Receipts",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/payments/receipts/"
+                    }
+                },
+                {
+                    "name": "Create Payment Receipt",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/payments/receipts/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "payment": "{{payment_id}}",
+                                "receipt_number": "REC123",
+                                "receipt_date": "2024-01-01"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get Payment Receipt",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/payments/receipts/{{receipt_id}}/"
+                    }
+                },
+                {
+                    "name": "Update Payment Receipt",
+                    "request": {
+                        "method": "PUT",
+                        "url": "{{base_url}}/api/v1/payments/receipts/{{receipt_id}}/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "receipt_number": "REC456"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Payment Receipt",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/payments/receipts/{{receipt_id}}/"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Communications",
+            "item": [
+                {
+                    "name": "List SMS Messages",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/communications/"
+                    }
+                },
+                {
+                    "name": "Send SMS Message",
+                    "request": {
+                        "method": "POST",
+                        "url": "{{base_url}}/api/v1/communications/",
+                        "body": {
+                            "mode": "raw",
+                            "raw": {
+                                "recipient": "{{tenant_id}}",
+                                "message": "Your rent payment is due."
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Get SMS Message",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{base_url}}/api/v1/communications/{{message_id}}/"
+                    }
+                },
+                {
+                    "name": "Delete SMS Message",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{base_url}}/api/v1/communications/{{message_id}}/"
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        }
+    ]
+}

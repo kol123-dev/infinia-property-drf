@@ -9,7 +9,19 @@ from rental_backend.permissions import IsLandlord, IsTenant
 from accounts.serializers import UserReadSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 import logging
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from .serializers import UserProfileSerializer, UserReadSerializer  # Add UserReadSerializer import
+from rest_framework.decorators import api_view  # Add this import
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status 
+from django.contrib.auth import login
+# Remove or comment out this line:
+# from .firebase_auth_backend import FirebaseAuthentication
 
+# Add this line:
+from .firebase_auth_backend import FirebaseAuthenticationBackend
 logger = logging.getLogger(__name__)
 
 
@@ -62,7 +74,7 @@ class DebugAuthView(APIView):
         logger.info(f"DebugAuthView - Is Landlord: {is_landlord}")
         
         # Get user groups and permissions
-        groups = []
+        groups = [] 
         permissions = []
         if hasattr(user, 'get_group_permissions'):
             permissions = list(user.get_group_permissions())
@@ -91,77 +103,62 @@ class DebugAuthView(APIView):
             'user_attributes': user_attrs,
         })
 
+
+
 class FirebaseLoginView(APIView):
-    authentication_classes = []  # Disable DRF auth
-    permission_classes = []
-
+    permission_classes = [AllowAny]
+    
     def post(self, request):
-        id_token = request.data.get('id_token')
-
-        if not id_token:
-            return Response(
-                {'success': False, 'error': 'Missing ID token'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Use the Firebase authentication backend
-        user = None
         try:
-            from accounts.firebase_auth_backend import FirebaseAuthenticationBackend
-            auth_backend = FirebaseAuthenticationBackend()
-            user = auth_backend.authenticate(request, token=id_token)
+            id_token = request.data.get('id_token')
+            if not id_token:
+                return Response({'error': 'No ID token provided'}, 
+                               status=status.HTTP_400_BAD_REQUEST)
 
+            firebase_auth = FirebaseAuthenticationBackend()
+            user = firebase_auth.authenticate(request, token=id_token)
+            
             if user:
-                # Optional: login to enable session-based features
-                
+                login(request, user, backend='accounts.firebase_auth_backend.FirebaseAuthenticationBackend')
+                # Include user data in response
                 return Response({
-                    'success': True,
+                    'message': 'Successfully logged in',
                     'user': {
                         'email': user.email,
-                        'name': user.name,
-                        'firebase_uid': user.firebase_uid
+                        'role': user.role,
+                        'name': user.name if hasattr(user, 'name') else None
                     }
-                })
+                }, status=status.HTTP_200_OK)
             else:
-                return Response(
-                    {'success': False, 'error': 'Invalid Firebase ID token'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+                return Response({'error': 'Invalid token'}, 
+                               status=status.HTTP_401_UNAUTHORIZED)
+
         except Exception as e:
-            return Response(
-                {'success': False, 'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({'error': str(e)}, 
+                           status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class ListUsersView(APIView):
     """
-    List all users. Only accessible by landlords and admins.
+    List all users. Temporarily accessible by anyone.
     """
-    permission_classes = [IsLandlord]
+    permission_classes = [AllowAny]  # Temporarily allow any user to access
 
     def get(self, request):
-        # Allow also Django admin users (is_staff or is_superuser)
-        user = request.user
-        if not (getattr(user, 'role', None) == 'landlord' or getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False)):
-            return Response({"error": "Only landlords or admins can list users."}, status=403)
         users = User.objects.all()
         serializer = UserReadSerializer(users, many=True)
         return Response(serializer.data)
 
 
 class CreateUserView(APIView):
-    """
-    View for creating new users. Only accessible by landlords.
-    Creates both a Firebase user and a local database user.
-    """
-    permission_classes = [IsLandlord]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get("email")
-        password = request.data.get("password")  # Required for Firebase auth
-        role = request.data.get("role", "tenant")  # Default to 'tenant' if not specified
-        name = request.data.get("name", email.split('@')[0] if email else "")
+        password = request.data.get("password")
+        role = request.data.get("role", "tenant")
+        first_name = request.data.get("first_name", "")
+        last_name = request.data.get("last_name", "")
         phone = request.data.get("phone", "")
 
         # Basic validation
@@ -185,13 +182,6 @@ class CreateUserView(APIView):
                 {"error": "A user with this email already exists"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
-        # Check if the requesting user is a landlord
-        if not request.user.is_authenticated or request.user.role != 'landlord':
-            return Response(
-                {"error": "Only landlords can create new users"},
-                status=status.HTTP_403_FORBIDDEN
-            )
 
         try:
             # 1. Create or get Firebase user
@@ -208,7 +198,7 @@ class CreateUserView(APIView):
                     email=email,
                     email_verified=False,
                     password=password,
-                    display_name=name,
+                    display_name=f"{first_name} {last_name}".strip(),
                     phone_number=phone if phone else None
                 )
                 # Set custom claims (including role)
@@ -217,7 +207,6 @@ class CreateUserView(APIView):
                     {'role': role}
                 )
             except exceptions.FirebaseError as e:
-                # Other Firebase errors
                 return Response(
                     {"error": f"Firebase error: {str(e)}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -227,7 +216,8 @@ class CreateUserView(APIView):
             try:
                 user = User.objects.create_user(
                     email=email,
-                    name=name,
+                    first_name=first_name,
+                    last_name=last_name,
                     firebase_uid=firebase_user.uid,
                     phone=phone,
                     role=role,
@@ -240,7 +230,7 @@ class CreateUserView(APIView):
                     "user": serializer.data
                 }, status=status.HTTP_201_CREATED)
             except Exception as e:
-                # Clean up Firebase user if it was created but something else failed
+                # Clean up Firebase user if it was created
                 if firebase_user:
                     try:
                         auth.delete_user(firebase_user.uid)
@@ -251,36 +241,6 @@ class CreateUserView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-                # 3. Create local user with the Firebase UID
-                user = User.objects.create_user(
-                    email=email,
-                    firebase_uid=firebase_user.uid,
-                    name=name,
-                    phone=phone,
-                    role=role,
-                    is_active=True
-                )
-                
-                # 4. Get a fresh copy of the user with updated claims
-                updated_user = auth.get_user(firebase_user.uid)
-                print(f"Created user with custom claims: {updated_user.custom_claims}")
-                
-                # 5. Return success response
-                serializer = UserReadSerializer(user)
-                return Response({
-                    "message": f"{role.title()} created successfully",
-                    "user": serializer.data
-                }, status=status.HTTP_201_CREATED)
-                
-            except Exception as e:
-                # Clean up Firebase user if it was created but something else failed
-                if 'firebase_user' in locals():
-                    try:
-                        auth.delete_user(firebase_user.uid)
-                    except Exception as delete_error:
-                        print(f"Error cleaning up Firebase user: {delete_error}")
-                raise  # Re-raise the original exception
-                
         except exceptions.FirebaseError as e:
             return Response(
                 {"error": f"Firebase error: {str(e)}"},
@@ -291,3 +251,45 @@ class CreateUserView(APIView):
                 {"error": f"An error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+    
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+    def put(self, request):
+        """Update current user's profile"""
+        serializer = UserWriteSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def firebase_login(request):
+    id_token = request.data.get('id_token')
+    try:
+        user = User.objects.get(email=email)
+        return Response({
+            'status': 'success',
+            'user': {
+                'uid': decoded_token['uid'],
+                'email': email,
+                'role': user.role  # Ensure role is included
+            }
+        }, status=200)
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=401)
+
+
+@api_view(['GET'])
+def check_session(request):
+    if request.user.is_authenticated:
+        return Response({'status': 'active'})
+    return Response({'status': 'inactive'}, status=401)
