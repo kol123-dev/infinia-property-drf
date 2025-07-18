@@ -1,7 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import RoleBasedPermission
 from units.models import Unit, UnitStatus
 from units.serializers import UnitReadSerializer, UnitWriteSerializer
 from tenants.models import Tenant
@@ -9,10 +10,19 @@ from tenants.serializers import TenantReadSerializer
 from django.shortcuts import get_object_or_404
 
 class UnitViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, RoleBasedPermission]
 
     def get_queryset(self):
-        queryset = Unit.objects.all()
+        user = self.request.user
+        queryset = Unit.objects.select_related('property_fk', 'property_fk__landlord', 'property_fk__agent')
+        
+        # Role-based filtering
+        if user.role == 'landlord':
+            queryset = queryset.filter(property_fk__landlord__user=user)
+        elif user.role == 'agent':
+            queryset = queryset.filter(property_fk__agent__user=user)
+        elif user.role == 'tenant':
+            queryset = queryset.filter(tenant_unit__user=user)
         
         # Filter by property if property_pk is provided
         if 'property_pk' in self.kwargs:

@@ -133,6 +133,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # <-- Must come after SessionMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.signals.RequestMiddleware',
 ]
 
 print("\n=== DJANGO MIDDLEWARE STACK AT STARTUP ===", flush=True)
@@ -209,7 +210,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-        'rental_backend.permissions.IsLandlord',
+        'accounts.permissions.IsLandlord',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',

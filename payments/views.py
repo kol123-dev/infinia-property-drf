@@ -99,19 +99,37 @@ class PaymentViewSet(viewsets.ModelViewSet):
         return PaymentWriteSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        # Filter by property if provided
+        user = self.request.user
+        queryset = Payment.objects.select_related(
+            'property', 'property__landlord', 'property__agent',
+            'tenant', 'tenant__user',
+            'unit', 'unit__property_fk'
+        )
+        
+        # Role-based filtering
+        if user.role == 'landlord':
+            # Landlords can see payments for their properties
+            queryset = queryset.filter(property__landlord__user=user)
+        elif user.role == 'agent':
+            # Agents can see payments for properties they manage
+            queryset = queryset.filter(property__agent__user=user)
+        elif user.role == 'tenant':
+            # Tenants can only see their own payments
+            queryset = queryset.filter(tenant__user=user)
+        
+        # Additional filters
         property_id = self.request.query_params.get('property')
         if property_id:
             queryset = queryset.filter(property_id=property_id)
-        # Filter by tenant if provided
+            
         tenant_id = self.request.query_params.get('tenant')
         if tenant_id:
             queryset = queryset.filter(tenant_id=tenant_id)
-        # Filter by unit if provided
+            
         unit_id = self.request.query_params.get('unit')
         if unit_id:
             queryset = queryset.filter(unit_id=unit_id)
+            
         return queryset
 
     @action(detail=True, methods=['post'])

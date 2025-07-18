@@ -16,9 +16,9 @@ class LandlordReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Landlord
         fields = [
-            'id', 'landlord_id', 'user', 'agent', 'name', 'email',
+            'id', 'landlord_id', 'user', 'agent',
             'phone', 'id_number', 'business_name',
-            'company_registration_number', 'created_at', 'properties'
+            'created_at', 'properties'
         ]
     
     def get_agent(self, obj):
@@ -74,7 +74,6 @@ class LandlordWriteSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.filter(role='landlord')
     )
-    # Fix: Provide a dummy queryset initially, then override in __init__
     agent = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.none(),  # Dummy queryset to avoid AssertionError
         required=False,
@@ -83,29 +82,25 @@ class LandlordWriteSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Import here to avoid circular imports and set proper queryset
         try:
             from agents.models import Agent
             self.fields['agent'].queryset = Agent.objects.all()
         except ImportError:
-            # Fallback if agents app is not available
             pass
 
     class Meta:
         model = Landlord
-        fields = [
-            'id', 'landlord_id', 'user', 'agent', 'name', 'email',
-            'phone', 'id_number', 'business_name',
-            'company_registration_number'
-        ]
+        fields = ['user', 'agent', 'business_name']
         read_only_fields = ['id', 'landlord_id']
 
-    def validate_email(self, value):
-        if value and not value.strip():
-            raise serializers.ValidationError("Email cannot be empty string")
-        return value
+    def create(self, validated_data):
+        # Remove any user-related fields that should come from the User model
+        validated_data.pop('phone', None)
+        validated_data.pop('id_number', None)
+        return super().create(validated_data)
+        read_only_fields = ['id', 'landlord_id']
 
     def validate_phone(self, value):
         if value and not value.startswith('+'):
-            raise serializers.ValidationError("Phone number must start with '+'")
+            raise serializers.ValidationError("Phone number must start with '+'")  
         return value

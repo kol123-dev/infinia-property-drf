@@ -13,14 +13,11 @@ class Landlord(models.Model):
     )
     
     # Basic Info
-    name = models.CharField(max_length=255, null=True, blank=True)
-    email = models.EmailField(unique=True, null=True, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     id_number = models.CharField(max_length=100, help_text='Encrypted', null=True, blank=True)
     
     # Business Details
     business_name = models.CharField(max_length=255, unique=True)
-    company_registration_number = models.CharField(max_length=100, null=True, blank=True)
     
     # Relationships - Using string reference to avoid circular import
     agent = models.ForeignKey(

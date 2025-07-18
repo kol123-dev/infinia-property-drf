@@ -2,6 +2,25 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from accounts.models import User
 from landlords.models import Landlord
+from agents.models import Agent
+from django.core.handlers.wsgi import WSGIRequest
+from threading import local
+
+_thread_locals = local()
+
+def get_current_request():
+    return getattr(_thread_locals, 'request', None)
+
+class RequestMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        _thread_locals.request = request
+        response = self.get_response(request)
+        if hasattr(_thread_locals, 'request'):
+            del _thread_locals.request
+        return response
 
 @receiver(post_save, sender=User)
 def sync_firebase_user(sender, instance, created, **kwargs):
@@ -20,8 +39,8 @@ def sync_firebase_user(sender, instance, created, **kwargs):
             firebase_user = firebase_auth.get_user_by_email(instance.email)
             # Update display name and custom claims if needed
             update_args = {}
-            if firebase_user.display_name != (instance.name or instance.email):
-                update_args['display_name'] = instance.name or instance.email
+            if firebase_user.display_name != (instance.full_name or instance.email):
+                update_args['display_name'] = instance.full_name or instance.email
             custom_claims = firebase_user.custom_claims or {}
             if custom_claims.get('role') != instance.role:
                 custom_claims['role'] = instance.role
@@ -43,15 +62,30 @@ def sync_firebase_user(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def sync_landlord_profile(sender, instance, created, **kwargs):
     if instance.role == 'landlord':
+        # Get the current request
+        request = get_current_request()
+        agent = None
+        
+        # If request exists and user is authenticated
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            # Get the agent associated with the logged-in user
+            try:
+                agent = Agent.objects.get(user=request.user)
+            except Agent.DoesNotExist:
+                pass
+
+        # Create or update the landlord profile
         landlord, _ = Landlord.objects.get_or_create(user=instance, defaults={
-            'business_name': instance.name or instance.email,
+            'business_name': instance.full_name or instance.email,
             'phone': instance.phone,
-            'is_active': instance.is_active,
+            'agent': agent  # Assign the agent during creation
         })
+        
         # Keep fields in sync
-        landlord.business_name = instance.name or instance.email
+        landlord.business_name = instance.full_name or instance.email
         landlord.phone = instance.phone
-        landlord.is_active = instance.is_active
+        if agent and not landlord.agent:  # Only update agent if not already set
+            landlord.agent = agent
         landlord.save()
     else:
         # If the user is no longer a landlord, delete the landlord profile if it exists

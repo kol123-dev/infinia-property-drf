@@ -27,14 +27,14 @@ class SimpleLandlordSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Landlord
-        fields = ['id', 'landlord_id', 'business_name', 'name', 'email', 'phone', 'user']
+        fields = ['id', 'landlord_id', 'business_name', 'user']
     
     def get_user(self, obj):
         if obj.user:
             return {
                 'id': obj.user.id,
                 'email': obj.user.email,
-                'full_name': obj.user.get_full_name() if hasattr(obj.user, 'get_full_name') else None,
+                'full_name': obj.user.full_name,
             }
         return None
 
@@ -162,6 +162,7 @@ class PropertyWriteSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         if value and len(value.strip()) < 3:
             raise serializers.ValidationError("Property name must be at least 3 characters long")
+        return value  # Add this line to return the validated value
 
 # Add this near the top of the file, after the imports
 class SimplePropertySerializer(serializers.ModelSerializer):

@@ -1,11 +1,11 @@
 # accounts/views.py
-print("DEBUG VIEW CALLED", flush=True)
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
 from django.contrib.auth import login
 from accounts.models import User
-from rental_backend.permissions import IsLandlord, IsTenant
+from accounts.permissions import IsLandlord, IsTenant
 from accounts.serializers import UserReadSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 import logging
