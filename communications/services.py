@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class SMSService:
     def __init__(self):
+        print("Debug - Initializing SMSService")
         # Initialize Africa's Talking
         africastalking.initialize(
             settings.AFRICASTALKING_USERNAME,
@@ -18,11 +19,11 @@ class SMSService:
         )
         self.sms = africastalking.SMS
         self.rate_limit = getattr(settings, 'SMS_RATE_LIMIT_PER_HOUR', 100)
-        self.message_templates = {
-            'payment_reminder': "Dear {name}, your rent payment of {amount} is due on {due_date}.",
-            'maintenance_notice': "Dear {name}, maintenance is scheduled for {date} at {time}.",
-            'welcome': "Welcome {name}! Your tenancy at {property} begins on {start_date}."
+        self.message_templates = {  # Changed to self.message_templates
+            'welcome': "Welcome to Infinia Property Management! We're excited to have you on board.",
+            'invoice_notification': "Dear {name}, an invoice of {amount} has been generated for you. Invoice #{invoice_number}. Due date: {due_date}."
         }
+        print(f"Debug - Available templates: {list(self.message_templates.keys())}")
 
     def validate_phone_number(self, phone: str) -> str:
         """Validate phone number format and ensure it has all necessary digits"""

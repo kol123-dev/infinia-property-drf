@@ -101,3 +101,15 @@ class Contract(models.Model):
 
     def __str__(self):
         return f"Contract for {self.tenant.name} ({self.start_date} - {self.end_date})"
+
+class TenantGroup(models.Model):
+    """Represents a group of tenants for bulk communication."""
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    landlord = models.ForeignKey(Landlord, on_delete=models.CASCADE, related_name='tenant_groups')
+    tenants = models.ManyToManyField(Tenant, related_name='groups')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.tenants.count()} tenants)"

@@ -40,3 +40,19 @@ class SmsMessage(models.Model):
 
     def __str__(self):
         return f"SMS to {self.recipients.count()} tenant(s) - {self.status}"
+
+
+class SmsTemplate(models.Model):
+    """Represents a reusable SMS template"""
+    name = models.CharField(max_length=100)
+    content = models.TextField()
+    landlord = models.ForeignKey(
+        Landlord,
+        on_delete=models.CASCADE,
+        related_name='sms_templates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name

@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from communications.models import SmsMessage
+from communications.models import SmsMessage, SmsTemplate  # Add SmsTemplate import
 from tenants.serializers import TenantReadSerializer
 from landlords.serializers import LandlordReadSerializer
-from tenants.models import Tenant  # <-- Import missing here
-from landlords.models import Landlord  # <-- Import missing here
+from tenants.models import Tenant
+from landlords.models import Landlord
 
 
 
@@ -35,3 +35,10 @@ class SmsMessageWriteSerializer(serializers.ModelSerializer):
             'external_message_id', 'error_message'
         ]
         read_only_fields = ['id', 'status', 'sent_at', 'updated_at']
+
+
+class SmsTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SmsTemplate
+        fields = ['id', 'name', 'content', 'landlord', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']

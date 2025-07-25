@@ -222,4 +222,36 @@ class InvoiceWriteSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             InvoiceItem.objects.create(invoice=invoice, **item_data)
 
+        # Send SMS notification
+        try:
+            from communications.services import SMSService
+            sms_service = SMSService()
+            
+            # Format the due date
+            due_date = validated_data['due_date'].strftime('%Y-%m-%d')
+            
+            # Get tenant's name and phone number
+            tenant = validated_data['tenant']
+            tenant_name = tenant.user.full_name if tenant.user else f"Tenant {tenant.tenant_id}"
+            
+            print(f"Debug - Tenant info: Name={tenant_name}, Phone={tenant.phone}")
+            print(f"Debug - Invoice info: Number={invoice.invoice_number}, Amount={validated_data['amount']}, Due={due_date}")
+            
+            # Send SMS using the invoice_notification template
+            result = sms_service.send_sms(
+                recipients=[tenant.phone],
+                message=sms_service.message_templates['invoice_notification'].format(
+                    name=tenant_name,
+                    amount=validated_data['amount'],
+                    invoice_number=invoice.invoice_number,
+                    due_date=due_date
+                )
+            )
+            print(f"Debug - SMS sending result: {result}")
+            
+        except Exception as e:
+            # Log the error but don't prevent invoice creation
+            print(f"Debug - Failed to send SMS notification: {str(e)}")
+            print(f"Debug - Full error: {repr(e)}")
+
         return invoice

@@ -1,10 +1,11 @@
 # communications/urls.py
 from django.urls import path, include
 from rest_framework.routers import SimpleRouter
-from communications.views import SmsMessageViewSet
+from communications.views import SmsMessageViewSet, SmsTemplateViewSet
 
 router = SimpleRouter()
-router.register('', SmsMessageViewSet, basename='sms')  # Remove r'sms' prefix
+router.register('messages', SmsMessageViewSet, basename='sms')
+router.register('templates', SmsTemplateViewSet, basename='sms-templates')
 
 urlpatterns = [
     path('', include(router.urls)),
