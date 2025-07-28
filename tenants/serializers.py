@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from tenants.models import Tenant, TenantStatus, EmergencyContact, Contract
+from tenants.models import Tenant, TenantStatus, EmergencyContact, Contract, TenantGroup
 from landlords.serializers import LandlordReadSerializer
 from landlords.models import Landlord  # Add this import
 from units.models import Unit
@@ -142,3 +142,20 @@ class ContractWriteSerializer(serializers.ModelSerializer):
         if data['start_date'] >= data['end_date']:
             raise serializers.ValidationError("End date must be after start date")
         return data
+
+class TenantGroupReadSerializer(serializers.ModelSerializer):
+    landlord = LandlordReadSerializer(read_only=True)
+    tenants = TenantReadSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TenantGroup
+        fields = ['id', 'name', 'description', 'landlord', 'tenants', 'created_at', 'updated_at']
+
+class TenantGroupWriteSerializer(serializers.ModelSerializer):
+    landlord = serializers.PrimaryKeyRelatedField(queryset=Landlord.objects.all())
+    tenants = serializers.PrimaryKeyRelatedField(queryset=Tenant.objects.all(), many=True)
+
+    class Meta:
+        model = TenantGroup
+        fields = ['id', 'name', 'description', 'landlord', 'tenants']
+        read_only_fields = ['id']
