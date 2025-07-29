@@ -19,9 +19,18 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-development-key')
 # Firebase configuration
 FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'firebase_service_account.json')
 
-# Initialize Firebase
-cred = credentials.Certificate(FIREBASE_CREDENTIALS)
-firebase_admin.initialize_app(cred)
+# Initialize Firebase only if credentials file exists and is valid
+try:
+    if os.path.exists(FIREBASE_CREDENTIALS):
+        cred = credentials.Certificate(FIREBASE_CREDENTIALS)
+        firebase_admin.initialize_app(cred)
+        print("✅ Firebase initialized successfully")
+    else:
+        print("⚠️ Firebase credentials not found - skipping Firebase initialization")
+        print(f"Looking for: {FIREBASE_CREDENTIALS}")
+except Exception as e:
+    print(f"⚠️ Firebase initialization failed: {e}")
+    print("Continuing without Firebase (likely in CI environment)")
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
