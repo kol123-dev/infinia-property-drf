@@ -38,6 +38,32 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd /var/www/infinia-pms/backend
-          git pull
+          
+          # Clean up any local changes and cache files
+          git reset --hard HEAD
+          git clean -fd
+          
+          # Remove Python cache files
+          find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+          find . -name "*.pyc" -delete 2>/dev/null || true
+          
+          # Stash any remaining local changes
+          git stash
+          
+          # Pull latest changes
+          git pull origin main
+          
+          # Navigate to docker-compose directory
           cd /var/www/infinia-pms/config
-          docker-compose up -d --build backend
+          
+          # Stop existing containers
+          docker-compose down
+          
+          # Remove any orphaned containers and networks
+          docker system prune -f
+          
+          # Build and start containers
+          docker-compose up -d --build --force-recreate backend
+          
+          # Show container status
+          docker-compose ps
